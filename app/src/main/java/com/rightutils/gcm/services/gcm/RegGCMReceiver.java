@@ -9,10 +9,13 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.os.AsyncTask;
 import android.util.Log;
+
 import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.GooglePlayServicesUtil;
+import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.android.gms.gcm.GoogleCloudMessaging;
+import com.google.android.gms.iid.InstanceID;
 import com.rightutils.rightutils.utils.RightUtils;
+
 import java.io.IOException;
 
 /**
@@ -24,16 +27,19 @@ public class RegGCMReceiver extends BroadcastReceiver {
 	public static final String PROPERTY_REG_ID = "registration_id";
 	public static final String PROPERTY_APP_VERSION = "appVersion";
 	public static final int REG_GCM_INTERVAL = 20 * 1000;
-	private GoogleCloudMessaging gcm;
+
+	//TODO
+	//private GoogleCloudMessaging gcm;
+
 	//NB your id from google api console
-	public static final String SENDER_ID = "559174343034";
+	public static final String SENDER_ID = "210800954625";
 
 	@Override
 	public void onReceive(final Context context, Intent intent) {
 		Log.i(TAG, "REG ID receiver running = " + RightUtils.isOnline(context));
 		if (RightUtils.isOnline(context)) {
 			if (checkPlayServices(context)) {
-				gcm = GoogleCloudMessaging.getInstance(context);
+				//gcm = GoogleCloudMessaging.getInstance(context);
 				final String redId = getRegistrationId(context);
 				if (redId.isEmpty()) {
 					registerInBackground(context);
@@ -56,7 +62,16 @@ public class RegGCMReceiver extends BroadcastReceiver {
 	}
 
 	private boolean checkPlayServices(Context context) {
-		int resultCode = GooglePlayServicesUtil.isGooglePlayServicesAvailable(context);
+		GoogleApiAvailability googleAPI = GoogleApiAvailability.getInstance();
+		int result = googleAPI.isGooglePlayServicesAvailable(context);
+		if(result != ConnectionResult.SUCCESS) {
+			cancelLoop(context);
+			return false;
+		}
+		return true;
+
+		//TODO
+		/*int resultCode = GooglePlayServicesUtil.isGooglePlayServicesAvailable(context);
 		if (resultCode != ConnectionResult.SUCCESS) {
 			if (!GooglePlayServicesUtil.isUserRecoverableError(resultCode)) {
 				Log.i(TAG, "This device is not supported.");
@@ -64,7 +79,7 @@ public class RegGCMReceiver extends BroadcastReceiver {
 			}
 			return false;
 		}
-		return true;
+		return true;*/
 	}
 
 	private String getRegistrationId(Context context) {
@@ -102,10 +117,14 @@ public class RegGCMReceiver extends BroadcastReceiver {
 			protected String doInBackground(Void... params) {
 				String msg;
 				try {
-					if (gcm == null) {
+					//TODO
+					InstanceID instanceID = InstanceID.getInstance(context);
+					final String pushId = instanceID.getToken(SENDER_ID,
+							GoogleCloudMessaging.INSTANCE_ID_SCOPE, null);
+					/*if (gcm == null) {
 						gcm = GoogleCloudMessaging.getInstance(context);
 					}
-					final String pushId = gcm.register(SENDER_ID);
+					final String pushId = gcm.register(SENDER_ID);*/
 					msg = "Device registered, registration ID=" + pushId;
 					sendRegistrationIdToBackend(context, pushId);
 					storeRegistrationId(context, pushId);
